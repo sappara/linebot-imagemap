@@ -38,13 +38,30 @@ foreach ($events as $event) {
     }
     // オウム返し
     // $bot->replyText($event->getReplyToken(), $event->getText());
-    replyTextMessage($bot, $event->getReplyToken(), $event->getText());
+    // replyTextMessage($bot, $event->getReplyToken(), $event->getText());
     // 他のfunctionを使うときは,それぞれの記述を書く事
     // テキストを返信
     // $bot->replyText($event->getReplyToken(), 'TextMessage');
     // テキストを返信、その２
     // replyTextMessage($bot, $event->getReplyToken(), 'こんにちは');
     // その他も同様
+
+    // ゲーム開始時の石の配置
+    $stones =
+    [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 2, 0, 0, 0],
+    [0, 0, 0, 2, 1, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    ];
+
+    // Imagemapを返信
+    replyImagemap($bot, $event->getReplyToken(), '盤面', $stones);
+
   }
 
 // テキストを返信。引数はLINEBot、返信先、テキスト
@@ -176,5 +193,29 @@ function replyTextMessage($bot, $replyToken, $text) {
       error_log('Failed!'. $response->getHTTPStatus . ' ' . $response->getRawBody());
     }
   }
+
+  // 盤面のImagemapを返信
+function replyImagemap($bot, $replyToken, $alternativeText, $stones, $lastStones) {
+  // アクションの配列
+  $actionArray = array();
+  // 1つ以上のエリアが必要なためダミーのタップ可能エリアを追加
+  array_push($actionArray, new LINE\LINEBot\ImagemapActionBuilder\ImagemapMessageActionBuilder(
+      '-',
+      new LINE\LINEBot\ImagemapActionBuilder\AreaBuilder(0, 0, 1, 1)));
+
+  // ImagemapMessageBuilderの引数は画像のURL、代替テキスト、
+  // 基本比率サイズ(幅は1040固定)、アクションの配列
+  $imagemapMessageBuilder = new \LINE\LINEBot\MessageBuilder\ImagemapMessageBuilder (
+    'https://' . $_SERVER['HTTP_HOST'] . '/images/' . urlencode(json_encode($stones) . '|' . json_encode($lastStones)) . '/' . uniqid(),
+    $alternativeText,
+    new LINE\LINEBot\MessageBuilder\Imagemap\BaseSizeBuilder(1040, 1040),
+    $actionArray
+  );
+
+  $response = $bot->replyMessage($replyToken, $imagemapMessageBuilder);
+  if(!$response->isSucceeded()) {
+    error_log('Failed!'. $response->getHTTPStatus . ' ' . $response->getRawBody());
+  }
+}
   
 ?>

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "de1648c41dbb54c203ffaa2d32b563e6",
+    "content-hash": "a7e5764788b8dca7de09034fe4fbb146",
     "packages": [
         {
             "name": "linecorp/line-bot-sdk",
@@ -85,6 +85,8 @@
     "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
-    "platform": [],
+    "platform": {
+        "ext-gd": "^7.3"
+    },
     "platform-dev": []
 }
