@@ -60,7 +60,7 @@ foreach ($events as $event) {
     ];
 
     // Imagemapを返信
-    replyImagemap($bot, $event->getReplyToken(), '盤面', $stones, null);
+    replyImagemap($bot, $event->getReplyToken(), '盤面', $stones);
   }
 
 // テキストを返信。引数はLINEBot、返信先、テキスト
@@ -194,7 +194,7 @@ function replyTextMessage($bot, $replyToken, $text) {
   }
 
   // 盤面のImagemapを返信
-function replyImagemap($bot, $replyToken, $alternativeText, $stones, $lastStones) {
+function replyImagemap($bot, $replyToken, $alternativeText, $stones) {
   // アクションの配列
   $actionArray = array();
   // 1つ以上のエリアが必要なためダミーのタップ可能エリアを追加
@@ -205,7 +205,7 @@ function replyImagemap($bot, $replyToken, $alternativeText, $stones, $lastStones
   // ImagemapMessageBuilderの引数は画像のURL、代替テキスト、
   // 基本比率サイズ(幅は1040固定)、アクションの配列
   $imagemapMessageBuilder = new \LINE\LINEBot\MessageBuilder\ImagemapMessageBuilder (
-    'https://' . $_SERVER['HTTP_HOST'] . '/images/' . urlencode(json_encode($stones) . '|' . json_encode($lastStones)) . '/' . uniqid(),
+    'https://' . $_SERVER['HTTP_HOST'] . '/images/' . urlencode(json_encode($stones) .  '/' . uniqid(),
     $alternativeText,
     new LINE\LINEBot\MessageBuilder\Imagemap\BaseSizeBuilder(1040, 1040),
     $actionArray
