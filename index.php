@@ -60,8 +60,7 @@ foreach ($events as $event) {
     ];
 
     // Imagemapを返信
-    replyImagemap($bot, $event->getReplyToken(), '盤面', $stones);
-
+    replyImagemap($bot, $event->getReplyToken(), '盤面', $stones, null);
   }
 
 // テキストを返信。引数はLINEBot、返信先、テキスト
