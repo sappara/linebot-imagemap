@@ -205,7 +205,7 @@ function replyImagemap($bot, $replyToken, $alternativeText, $stones) {
   // ImagemapMessageBuilderの引数は画像のURL、代替テキスト、
   // 基本比率サイズ(幅は1040固定)、アクションの配列
   $imagemapMessageBuilder = new \LINE\LINEBot\MessageBuilder\ImagemapMessageBuilder (
-    'https://' . $_SERVER['HTTP_HOST'] . '/images/' . urlencode(json_encode($stones) .  '/' . uniqid(),
+    'https://' . $_SERVER['HTTP_HOST'] . '/images/' . urlencode(json_encode($stones)).  '/' . uniqid(),
     $alternativeText,
     new LINE\LINEBot\MessageBuilder\Imagemap\BaseSizeBuilder(1040, 1040),
     $actionArray
