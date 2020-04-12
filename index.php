@@ -55,6 +55,8 @@ foreach ($events as $event) {
     // replyTextMessage($bot, $event->getReplyToken(), 'こんにちは');
     // その他も同様
 
+// 何度か呼びかけても、レコードを追加する前に、そのユーザーの登録有無をチェックしているので、同じユーザーによるレコードは重複して保存されない仕組み
+// 下の方でgetStonesByUserId()でレコードが存在しなければreturn PDO::PARAM_NULL;してる
 
 // ユーザーの情報がデータベースに存在しない時
 if(getStonesByUserId($event->getUserId()) === PDO::PARAM_NULL) {
@@ -82,6 +84,15 @@ if(getStonesByUserId($event->getUserId()) === PDO::PARAM_NULL) {
     $stones = getStonesByUserId($event->getUserId());
   }
 
+    // 入力されたテキストを[行,列]の配列に変換
+    $tappedArea = json_decode($event->getText());
+
+    // ユーザーの石を置く
+    placeStone($stones, $tappedArea[0] - 1, $tappedArea[1] - 1, true);
+
+    // ユーザーの情報を更新
+    updateUser($event->getUserId(), json_encode($stones));
+
     // Imagemapを返信
     replyImagemap($bot, $event->getReplyToken(), '盤面', $stones);
   }
@@ -95,6 +106,14 @@ function registerUser($userId, $stones) {
   $sql = 'insert into '. TABLE_NAME_STONES .' (userid, stone) values (pgp_sym_encrypt(?, \'' . getenv('DB_ENCRYPT_PASS') . '\'), ?) ';
   $sth = $dbh->prepare($sql);
   $sth->execute(array($userId, $stones));
+}
+
+// ユーザーの情報を更新（DBの上書き）
+function updateUser($userId, $stones) {
+  $dbh = dbConnection::getConnection();
+  $sql = 'update ' . TABLE_NAME_STONES . ' set stone = ? where ? = pgp_sym_decrypt(userid, \'' . getenv('DB_ENCRYPT_PASS') . '\')';
+  $sth = $dbh->prepare($sql);
+  $sth->execute(array($stones, $userId));
 }
 
 // ユーザーIDを元にデータベースから情報を取得
@@ -160,6 +179,45 @@ function getFlipCountByPosAndColor($stones, $row, $col, $isWhite)
   }
   // ひっくり返る総数を返す
   return $total;
+}
+
+// 石を置く。石の配置は参照渡し
+// (変数$stones(参照渡し)と行,列,色を引数として受け取る)
+function placeStone(&$stones, $row, $col, $isWhite) {
+  // ひっくり返す。処理の流れは
+  // getFlipCountByPosAndColorとほぼ同じ
+  $directions = [[-1, 0],[-1, 1],[0, 1],[1, 0],[1, 1],[1, 0],[1, -1],[0, -1],[-1, -1]];
+
+  for ($i = 0; $i < count($directions); ++$i) {
+    $cnt = 1;
+    $rowDiff = $directions[$i][0];
+    $colDiff = $directions[$i][1];
+    $flipCount = 0;
+
+    while (true) {
+      if (!isset($stones[$row + $rowDiff * $cnt]) || !isset($stones[$row + $rowDiff * $cnt][$col + $colDiff * $cnt])) {
+        $flipCount = 0;
+        break;
+      }
+      if ($stones[$row + $rowDiff * $cnt][$col + $colDiff * $cnt] == ($isWhite ? 2 : 1)) {
+        $flipCount++;
+      } elseif ($stones[$row + $rowDiff * $cnt][$col + $colDiff * $cnt] == ($isWhite ? 1 : 2)) {
+        if ($flipCount > 0) {
+          // ひっくり返す
+          for ($i = 0; $i < $flipCount; ++$i) {
+            $stones[$row + $rowDiff * ($i + 1)][$col + $colDiff * ($i + 1)] = ($isWhite ? 1 : 2);
+          }
+        }
+        break;
+      } elseif ($stones[$row + $rowDiff * $cnt][$col + $colDiff * $cnt] == 0) {
+        $flipCount = 0;
+        break;
+      }
+      $cnt++;
+    }
+  }
+  // 新たに石を置く
+  $stones[$row][$col] = ($isWhite ? 1 : 2);
 }
 
 
