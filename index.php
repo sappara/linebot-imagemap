@@ -89,7 +89,8 @@ if(getStonesByUserId($event->getUserId()) === PDO::PARAM_NULL) {
 
     // ユーザーの石を置く
     placeStone($stones, $tappedArea[0] - 1, $tappedArea[1] - 1, true);
-
+    // 相手の石を置く
+    placeAIStone($stones);
     // ユーザーの情報を更新
     updateUser($event->getUserId(), json_encode($stones));
 
@@ -218,6 +219,41 @@ function placeStone(&$stones, $row, $col, $isWhite) {
   }
   // 新たに石を置く
   $stones[$row][$col] = ($isWhite ? 1 : 2);
+}
+
+// 敵の石を置く
+function placeAIStone(&$stones) {
+  // ８x８の６４マスを左上から０から番号ふってる
+  // 強い場所の配列。強い順
+  $strongArray = [0, 7, 56, 63, 2, 5, 16, 18, 21, 23, 40, 42, 45, 47, 58, 61];
+  // 弱い場所の配列。強い順
+  $weakArray = [1, 6, 8, 15, 48, 55, 57, 62, 9, 14, 49, 54];
+  // 55も置けそうなので追記
+
+  // どちらにも属さない場所の配列
+  $otherArray = [];
+  for ($i = 0; $i < count($stones) * count($stones[0]); $i++) {
+      if (!in_array($i, $strongArray) && !in_array($i, $weakArray)) {
+          array_push($otherArray, $i);
+      }
+  }
+  // ランダム性を持たせるためシャッフル
+  shuffle($otherArray);
+
+  // 全てのマスの強い+普通+弱い順の配列
+  $posArray = array_merge($strongArray, $otherArray, $weakArray);
+
+  // 1つずつそこに置けるかをチェックし、
+  // 可能なら置いて処理を終える
+  for ($i = 0; $i < count($posArray); ++$i) {
+    $pos = [$posArray[$i] / 8, $posArray[$i] % 8];
+    if ($stones[$pos[0]][$pos[1]] == 0) {
+      if (getFlipCountByPosAndColor($stones, $pos[0], $pos[1], false) > 0) {
+        placeStone($stones, $pos[0], $pos[1], false);
+        break;
+      }
+    }
+  }
 }
 
 
