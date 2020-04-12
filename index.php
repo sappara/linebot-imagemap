@@ -62,7 +62,7 @@ foreach ($events as $event) {
     if(substr($event->getText(), 4) == 'check_board') {
       if(getStonesByUserId($event->getUserId()) != PDO::PARAM_NULL) {
         $stones = getStonesByUserId($event->getUserId());
-        replyImagemap($bot, $event->getReplyToken(), '盤面',  $stones);
+        replyImagemap($bot, $event->getReplyToken(), '盤面',  $stones, null);
       }
     }
     // 情勢の確認
@@ -99,7 +99,7 @@ foreach ($events as $event) {
       ];
       registerUser($event->getUserId(), json_encode($stones));
 
-      replyImagemap($bot, $event->getReplyToken(), '盤面', $stones);
+      replyImagemap($bot, $event->getReplyToken(), '盤面', $stones, null);
     }
     // 遊び方
     else if(substr($event->getText(), 4) == 'help') {
@@ -129,13 +129,15 @@ if(getStonesByUserId($event->getUserId()) === PDO::PARAM_NULL) {
     // ユーザーをデータベースに登録
     registerUser($event->getUserId(), json_encode($stones));
     // Imagemapを返信
-    replyImagemap($bot, $event->getReplyToken(), '盤面', $stones);
+    replyImagemap($bot, $event->getReplyToken(), '盤面', $stones, null);
     // 以降の処理をスキップ
     continue;
   // 存在する時
   } else {
     // データベースから現在の石の配置を取得
     $stones = getStonesByUserId($event->getUserId());
+    // 前回の配列として持たせる（高速化のため）
+    $lastStones = $stones;
   }
 
     // 入力されたテキストを[行,列]の配列に変換
@@ -169,7 +171,7 @@ if(getStonesByUserId($event->getUserId()) === PDO::PARAM_NULL) {
 
 
     // Imagemapを返信
-    replyImagemap($bot, $event->getReplyToken(), '盤面', $stones);
+    replyImagemap($bot, $event->getReplyToken(), '盤面', $stones, $lastStones);
   }
 
 // 以下の「DB_ENCRYPT_PASS」はHEROKUのComfig Varsに登録すること
@@ -533,7 +535,7 @@ function replyTextMessage($bot, $replyToken, $text) {
   }
 
   // 盤面のImagemapを返信
-function replyImagemap($bot, $replyToken, $alternativeText, $stones) {
+function replyImagemap($bot, $replyToken, $alternativeText, $stones, $lastStones) {
   // アクションの配列
   $actionArray = array();
   // 1つ以上のエリアが必要なためダミーのタップ可能エリアを追加
@@ -560,7 +562,7 @@ function replyImagemap($bot, $replyToken, $alternativeText, $stones) {
   // ImagemapMessageBuilderの引数は画像のURL、代替テキスト、
   // 基本比率サイズ(幅は1040固定)、アクションの配列
   $imagemapMessageBuilder = new \LINE\LINEBot\MessageBuilder\ImagemapMessageBuilder (
-    'https://' . $_SERVER['HTTP_HOST'] . '/images/' . urlencode(json_encode($stones)).  '/' . uniqid(),
+    'https://' . $_SERVER['HTTP_HOST'] . '/images/' . urlencode(json_encode($stones). '|' . json_encode($lastStones)).  '/' . uniqid(),
     $alternativeText,
     new LINE\LINEBot\MessageBuilder\Imagemap\BaseSizeBuilder(1040, 1040),
     $actionArray
